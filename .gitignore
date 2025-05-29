@@ -1,0 +1,10 @@
+*.txt
+*.keras
+*.swp
+/.ipynb_checkpoints/
+/__pycache__/
+.gitattributes
+scratch paper.ipynb
+*.pt
+*.ckpt
+*.bat

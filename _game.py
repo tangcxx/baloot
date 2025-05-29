@@ -1,0 +1,221 @@
+# 这是 baloot 模拟器。
+# 它由 baloot 规则、流程逻辑、以及一个随机出牌的机器人组成。
+# 这个模拟器的目的是为了测试 baloot 的规则和流程。
+# 游戏和打牌的机器人分别定义为两个类。
+
+#%%
+import numpy as np
+
+#%%
+
+COLORS = ['♠', '♥', '♣', '♦']
+LABELS = ['7', '8', '9', '10', 'J', 'Q', 'K', 'A']
+
+cardstr = [c+n 
+           for c in COLORS
+           for n in LABELS]
+
+def list2vec(l):
+    vec = np.zeros(32, dtype=np.int8)
+    vec[l] = 1
+    return vec
+
+def vec2list(vec):
+    return np.where(vec == 1)[0].tolist()
+
+def list2str(l):
+    return " ".join([cardstr[i] for i in l])
+
+def vec2str(vec):
+    return " ".join([cardstr[i] for i in vec2list(vec)])
+
+## 从7到A的排序
+ranks_hokum = [0, 1, 6, 4, 7, 2, 3, 5]
+ranks_sun = [0, 1, 2, 6, 3, 4, 5, 7]
+
+## 从7到A的分数
+scores_hokum = [0, 0, 14, 10, 20, 3, 4, 11]
+scores_sun = [0, 0, 0, 10, 2, 3, 4, 11]
+
+#%%
+class PreGame:
+    def __init__(self):
+        self.cards_shuffled = np.array(list(range(32)), dtype=np.int8) ## 洗牌
+        np.random.shuffle(self.cards_shuffled)
+        self.cards = []
+        self.card_revealed = self.cards_shuffled[20]  ## 第二十一张牌是明牌
+        
+    ## 叫牌机器人
+    def register(self, bots_bidding):
+        self.bots_bidding = bots_bidding
+        # [bot.register(self) for bot in self.bots_bidding]
+        
+    ## 各发5张牌
+    def deal_befor_bidding(self):
+        cards = self.cards_shuffled[0:20].reshape(4, 5)
+        self.cards_vec = np.array([list2vec(l) for l in cards])
+        
+    ## 叫牌
+    def bidding(self):
+        ## 0, 1, 2, 3 对应黑桃，红桃，梅花，方块，4 对应 sun
+        self.hokum = np.random.choice([0, 1, 2, 3, 4])
+        self.host = np.random.choice(4)
+
+    ## 发剩下的牌
+    def deal_after_bidding(self):
+        host = self.host
+        cards = self.cards_shuffled[20:].reshape(4, 3)[:, 0:5]
+        cards = np.array([list2vec(l) for l in cards])
+        self.cards_vec[host] += cards[0]
+        for i in range(1, 4):
+            self.cards_vec[(host+i)%4] += cards[i]
+
+    def walkthrough(self):
+        self.deal_befor_bidding()
+        self.bidding()
+        self.deal_after_bidding()
+
+#%%
+## 打牌和发牌的模型分开训练，先训练打牌的模型，再训练发牌的模型
+## Game 类用于训练打牌的模型，不考虑发牌，去掉发牌阶段
+class Game:
+    def __init__(self, verbose=False):
+        self.cards_shuffled = np.array(list(range(32)), dtype=np.int8) ## 洗牌
+        np.random.shuffle(self.cards_shuffled)
+        self.hokum = np.random.choice([0, 1, 2, 3, 4])  ## 0, 1, 2, 3 对应黑桃，红桃，梅花，方块，4 对应 sun
+        self.host = np.random.choice(4)  ## 随机指定主叫方
+        cards = self.cards_shuffled.reshape(4, 8)
+        self.card_revealed = cards[self.host][0]  ## 明牌，发给主叫方
+        self.cards_vec_init = np.array([list2vec(l) for l in cards])
+        self.cards_vec = self.cards_vec_init.copy()
+        self.history = []
+        self.scores = []
+        self.verbose = verbose
+
+    def register_bots(self, bots):
+        self.bots = bots
+        [bot.reset(self) for bot in self.bots]
+
+    def oneround(self):
+        history = {"host": self.host, "played": []}
+        played = history["played"]
+        self.history.append(history)
+        for i in range(4):
+            seat_current = (self.host + i) % 4
+            card = self.bots[seat_current].play(self)
+            self.cards_vec[seat_current, card] = 0 ## 出牌
+            played.append(card)
+            if self.verbose:
+                print(f"Bot {seat_current} played {cardstr[card]} ({vec2str(self.cards_vec[seat_current])})")
+        
+        colors = [c // 8 for c in played]
+        indices = [c % 8 for c in played]
+
+        ## 计算本轮的赢家
+        def get_newhost(colors, indices, hokum, host):
+            color = colors[0]
+            index = indices[0]
+            newhost_offset = 0
+            for i in range(1, 4):
+                if colors[i] == color: ## 如果与当前最大牌花色相同
+                    ranks = ranks_hokum if colors[i] == hokum else ranks_sun
+                    if ranks[indices[i]] > ranks[index]: ## 如果比当前最大牌大
+                        index = indices[i]
+                        newhost_offset = i
+                elif colors[i] == hokum: ## 如果此前最大牌不是hokum而这张牌是 hokum
+                    color = colors[i]
+                    index = indices[i]
+                    newhost_offset = i
+            return (host + newhost_offset) % 4
+        self.host = get_newhost(colors, indices, self.hokum, self.host)
+
+        ## 计算本轮分数
+        def get_score_round(colors, indices, hokum):
+            score = 0
+            for color, index in zip(colors, indices):
+                if color == hokum:
+                    score += scores_hokum[index]
+                else:
+                    score += scores_sun[index]
+            return score
+        
+        score = get_score_round(colors, indices, self.hokum)
+        score = score if self.host % 2 == 0 else -score
+        self.scores.append(score)
+        
+        if self.verbose:
+            print(f"Round:{len(self.history)} score:{score} Scores:{np.array(self.scores).sum(axis=0)}")
+        
+    def get_choices(self):
+        played = self.history[-1]["played"]
+        seat = (self.host + len(played)) % 4
+        cards = vec2list(self.cards_vec[seat])
+        if len(played) == 0:  ## 先手，出任意牌
+            choices = cards
+        else:
+            color = played[0] // 8
+            choices = [card for card in cards if card // 8 == color] ## 出同花色牌
+            if not choices:  ## 没有同花色牌
+                if self.hokum < 4: ## hokum 局
+                    choices = [card for card in cards if card // 8 == self.hokum] ## 出 hokum 牌
+                    if not choices:  ## 没有 hokum 牌
+                        choices = cards  ## 出任意牌
+                else:  ## sun 局
+                    choices = cards  ## 出任意牌
+        return choices
+        
+    def whole_game(self):
+        if self.verbose:
+            if self.hokum < 4:
+                print("hokum:", COLORS[self.hokum])
+            else:
+                print("hokum:", "sum")
+        for i in range(8-len(self.history)):
+            self.oneround()
+
+#%%
+class Game_Hokom(Game):
+    def __init__(self, verbose=False):
+        super().__init__(verbose)
+        self.hokum = 0
+
+class Game_Sun(Game):
+    def __init__(self, verbose=False):
+        super().__init__(verbose)
+        self.hokum = 4
+
+
+## Bot
+## reset(): 重置Bot状态，接受一个参数 game. 训练模型时bot中需要保存一些数据，reset 用于重置这些数据
+## play(): 出牌，接受一个参数 game
+# %%
+class Bot_Random:
+    def __init__(self):
+        pass
+
+    def reset(self, game: Game):
+        self.game = game
+
+    def play(self, game: Game):
+        choices = game.get_choices()
+        return np.random.choice(choices)
+
+# %%
+class Bot_Rule:
+    def __init__(self):
+        pass
+
+    def reset(self, game: Game):
+        self.game = game
+
+    def play(self, game: Game):
+        choices = game.get_choices()
+        return np.random.choice(choices)
+
+# # %%
+# game = Game_Sun(verbose=True)
+# # %%
+# game.register([Bot_Random() for _ in range(4)])
+# # %%
+# game.whole_game()
+# # %%
