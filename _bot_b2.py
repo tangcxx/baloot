@@ -1,4 +1,4 @@
-## 作弊的单一 sun 模型
+## 作弊的单一 Hokom 模型
 
 
 #%%
@@ -70,8 +70,9 @@ class Bot:
 
     def reset(self, game: Game):
         self.game = game
-
         self.data = []
+        for i in range(4):
+            self.models[i].train()
 
     def play(self, game: Game):
         choices = game.get_choices()
@@ -118,4 +119,26 @@ class Bot:
         
         return x
         
+        
+class Bot_Eval(Bot):
+    def __init__(self, models):
+        self.models = models
+
+    def reset(self, game: Game):
+        self.game = game
+        for i in range(4):
+            self.models[i].eval()
+    
+    def play(self, game: Game):
+        choices = game.get_choices()
+        if len(choices) == 1:
+            return choices[0]
+        order = len(game.history[-1]["played"])
+        model = self.models[order]
+        x = self.get_data(game)
+        with torch.no_grad():
+            logits = model(x)
+        return choices[logits[0, choices].argmax()]
+        
+
 #%%

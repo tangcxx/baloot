@@ -12,12 +12,12 @@ import _bot_b2
 
 # 训练参数
 from _game import Game_Hokom, Bot_Random
-from _bot_b2 import Bot, Model
+from _bot_b2 import Model, Bot, Bot_Eval
 
 gamma = 1
 
 modelpath = "model_b2"
-iterstart=8000
+iterstart=147000
 model_freq = 1000
 nmatch_per_iter = 8
 nmatch_eval = 1000
@@ -52,19 +52,19 @@ def eval(models):
         cards = np.array(range(32), dtype=np.int8)
         np.random.shuffle(cards)
 
-        bots = [Bot(models), Bot_Random(), Bot(models), Bot_Random()]
+        bots = [Bot_Eval(models), Bot_Random(), Bot_Eval(models), Bot_Random()]
         game = Game_Hokom(cards=cards.copy())
         game.register_bots(bots)
         game.whole_game()
     
-        bots = [Bot_Random(), Bot(models), Bot_Random(), Bot(models)]
+        bots = [Bot_Random(), Bot_Eval(models), Bot_Random(), Bot_Eval(models)]
         game2 = Game_Hokom(cards=cards.copy())
         game2.register_bots(bots)
         game2.whole_game()
         
         scores.append([np.sum(game.scores), -np.sum(game2.scores)])
     
-    return np.array(scores).sum(axis=0)/nmatch_eval
+    return np.array(scores).sum(axis=0)/nmatch_eval, (np.array(scores) >= 0).sum(axis=0)/nmatch_eval
 
 def checkpoint_save(iter, models, optizimers):
     torch.save(
@@ -122,9 +122,9 @@ def train():
         iter += 1
         if iter % model_freq == 0:
             checkpoint_save(iter, models, optimizers)
-            scores = eval(models)
-            f_eval.write(f"{iter}\t{nmatch_eval}\t{scores[0]}\t{scores[1]}\n")
-            print(datetime.now(), "eval:", scores[0], scores[1])
+            scores, wins = eval(models)
+            f_eval.write(f"{iter}\t{nmatch_eval}\t{scores[0]}\t{scores[1]}\t{wins[0]}\t{wins[1]}\n")
+            print(datetime.now(), "eval:", scores[0], scores[1], wins[0], wins[1])
             f_log.write(f"{datetime.now()}\t{iter}\n")
             print(datetime.now(), iter)
 
