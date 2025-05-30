@@ -79,12 +79,15 @@ class PreGame:
 ## 打牌和发牌的模型分开训练，先训练打牌的模型，再训练发牌的模型
 ## Game 类用于训练打牌的模型，不考虑发牌，去掉发牌阶段
 class Game:
-    def __init__(self, verbose=False):
-        self.cards_shuffled = np.array(list(range(32)), dtype=np.int8) ## 洗牌
-        np.random.shuffle(self.cards_shuffled)
+    def __init__(self, cards=None, verbose=False):
         self.hokum = np.random.choice([0, 1, 2, 3, 4])  ## 0, 1, 2, 3 对应黑桃，红桃，梅花，方块，4 对应 sun
         self.host = np.random.choice(4)  ## 随机指定主叫方
-        cards = self.cards_shuffled.reshape(4, 8)
+
+        if cards is None:
+            cards = np.array(range(32), dtype=np.int8) ## 洗牌
+            np.random.shuffle(cards)
+        cards = cards.reshape(4, 8)
+
         self.card_revealed = cards[self.host][0]  ## 明牌，发给主叫方
         self.cards_vec_init = np.array([list2vec(l) for l in cards])
         self.cards_vec = self.cards_vec_init.copy()
@@ -175,13 +178,13 @@ class Game:
 
 #%%
 class Game_Hokom(Game):
-    def __init__(self, verbose=False):
-        super().__init__(verbose)
+    def __init__(self, cards=None, verbose=False):
+        super().__init__(cards=cards, verbose=verbose)
         self.hokum = 0
 
 class Game_Sun(Game):
-    def __init__(self, verbose=False):
-        super().__init__(verbose)
+    def __init__(self, cards=None, verbose=False):
+        super().__init__(cards=cards, verbose=verbose)
         self.hokum = 4
 
 
