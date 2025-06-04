@@ -93,6 +93,7 @@ class Game:
         self.cards_vec = self.cards_vec_init.copy()
         self.history = []
         self.scores = []
+        self.outof = np.zeros((4, 4), dtype=np.int8)
         self.verbose = verbose
 
     def register_bots(self, bots):
@@ -109,10 +110,19 @@ class Game:
             self.cards_vec[seat_current, card] = 0 ## 出牌
             played.append(card)
             if self.verbose:
-                print(f"Bot {seat_current} played {cardstr[card]} ({vec2str(self.cards_vec[seat_current])})")
+                print(f"seat {seat_current} played {cardstr[card]} ({vec2str(self.cards_vec[seat_current])})")
         
         colors = [c // 8 for c in played]
         indices = [c % 8 for c in played]
+
+        ## 计算断牌
+        def get_outof(colors):
+            for i in range(1, 4):
+                if colors[i] != colors[0]:
+                    self.outof[(self.host + i) % 4, colors[0]] = 1
+                    if self.hokum < 4 and colors[i] != self.hokum:
+                        self.outof[(self.host + i) % 4, self.hokum] = 1
+        get_outof(colors)
 
         ## 计算本轮的赢家
         def get_newhost(colors, indices, hokum, host):
@@ -141,9 +151,8 @@ class Game:
                 else:
                     score += scores_sun[index]
             return score
-        
         score = get_score_round(colors, indices, self.hokum)
-        score = score if self.host % 2 == 0 else -score
+        score = score if self.host % 2 == 0 else -score  ## 0,2 位次的玩家, 赢了加分, 输了减分. 更新后的 host 即为赢家
         self.scores.append(score)
         
         if self.verbose:

@@ -8,16 +8,16 @@ import numpy as np
 from datetime import datetime
 
 import _game
-import _bot_b2
+import _bot_f
 
 # 训练参数
 from _game import Game_Hokom, Bot_Random
-from _bot_b2 import Model, Bot, Bot_Eval
+from _bot_f import Model, Bot, Bot_Eval
 
 gamma = 1
 
-modelpath = "model_b2"
-iterstart=147000
+modelpath = "model_f"
+iterstart=0
 model_freq = 1000
 nmatch_per_iter = 8
 nmatch_eval = 1000

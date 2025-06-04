@@ -166,7 +166,7 @@ class Bot:
         
         ## 本轮在我之前的各家出牌
         for i, card in enumerate(played):
-            x[5+i, card] = 1
+            x[6+i, card] = 1
 
         z = np.zeros((6, 7, 32))
         
