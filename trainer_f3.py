@@ -1,6 +1,4 @@
-# 仅训练Game_Hokom模型
-
-## 关键typo: Gs_i 误作 Gs[i]
+# 修正trainer_f的错误 (误把Gs_i写成Gs[i])
 
 #%%
 import os
@@ -18,11 +16,11 @@ from _bot_f import Model, Bot, Bot_Eval
 
 gamma = 1
 
-modelpath = "model_f"
+modelpath = "model_f3"
 iterstart=0
-model_freq = 1000
-nmatch_per_iter = 8
-nmatch_eval = 1000
+model_freq = 100
+nmatch_per_iter = 20
+nmatch_eval = 250
 
 def selfplay(models):
     bots = [Bot(models) for _ in range(4)]
@@ -110,7 +108,7 @@ def train():
                 Gs[i].extend(v[i])
 
         for log_probs_i, Gs_i, optimizer in zip(log_probs, Gs, optimizers):
-            gs_i = torch.tensor(Gs[i], dtype=torch.float32)
+            gs_i = torch.tensor(Gs_i, dtype=torch.float32)
             gs_i = (gs_i - gs_i.mean()) / (gs_i.std() + 1e-9)
             loss = []
             for log_prob, g in zip(log_probs_i, gs_i):
