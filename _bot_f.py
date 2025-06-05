@@ -81,8 +81,8 @@ class Bot:
         for i in range(4):
             self.models[i].train()
 
-    def play(self, game: Game):
-        choices = game.get_choices()
+    def play(self, game: Game, choices):
+        # choices = game.get_choices()
         if len(choices) == 1:
             return choices[0]
 
@@ -158,8 +158,8 @@ class Bot_Eval(Bot):
         for i in range(4):
             self.models[i].eval()
     
-    def play(self, game: Game):
-        choices = game.get_choices()
+    def play(self, game: Game, choices):
+        # choices = game.get_choices()
         if len(choices) == 1:
             return choices[0]
         order = len(game.history[-1]["played"])

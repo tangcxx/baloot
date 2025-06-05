@@ -106,11 +106,12 @@ class Game:
         self.history.append(history)
         for i in range(4):
             seat_current = (self.host + i) % 4
-            card = self.bots[seat_current].play(self)
+            choices = self.get_choices()
+            card = self.bots[seat_current].play(self, choices)
             self.cards_vec[seat_current, card] = 0 ## 出牌
             played.append(card)
             if self.verbose:
-                print(f"seat {seat_current} played {cardstr[card]} ({vec2str(self.cards_vec[seat_current])})")
+                print(f"seat {seat_current} played {cardstr[card]} ({list2str(choices)}) ({vec2str(self.cards_vec[seat_current])})")
         
         colors = [c // 8 for c in played]
         indices = [c % 8 for c in played]
@@ -208,8 +209,8 @@ class Bot_Random:
     def reset(self, game: Game):
         self.game = game
 
-    def play(self, game: Game):
-        choices = game.get_choices()
+    def play(self, game: Game, choices):
+        # choices = game.get_choices()
         return np.random.choice(choices)
 
 # %%
@@ -220,8 +221,8 @@ class Bot_Rule:
     def reset(self, game: Game):
         self.game = game
 
-    def play(self, game: Game):
-        choices = game.get_choices()
+    def play(self, game: Game, choices):
+        # choices = game.get_choices()
         return np.random.choice(choices)
 
 # # %%

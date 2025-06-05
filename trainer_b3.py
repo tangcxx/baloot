@@ -1,4 +1,4 @@
-# 修正trainer_f的错误 (误把Gs_i写成Gs[i])
+## b2 修正关键typo: Gs_i 误作 Gs[i]
 
 #%%
 import os
@@ -8,15 +8,15 @@ import numpy as np
 from datetime import datetime
 
 import _game
-import _bot_f
+import _bot_b2
 
 # 训练参数
 from _game import Game_Hokom, Bot_Random
-from _bot_f import Model, Bot, Bot_Eval
+from _bot_b2 import Model, Bot, Bot_Eval
 
 gamma = 1
 
-modelpath = "model_f3"
+modelpath = "model_b3"
 iterstart=0
 model_freq = 1000
 nmatch_per_iter = 20
