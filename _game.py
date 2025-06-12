@@ -38,42 +38,42 @@ scores_hokum = [0, 0, 14, 10, 20, 3, 4, 11]
 scores_sun = [0, 0, 0, 10, 2, 3, 4, 11]
 
 #%%
-class PreGame:
-    def __init__(self):
-        self.cards_shuffled = np.array(list(range(32)), dtype=np.int8) ## 洗牌
-        np.random.shuffle(self.cards_shuffled)
-        self.cards = []
-        self.card_revealed = self.cards_shuffled[20]  ## 第二十一张牌是明牌
+# class PreGame:
+#     def __init__(self):
+#         self.cards_shuffled = np.array(list(range(32)), dtype=np.int8) ## 洗牌
+#         np.random.shuffle(self.cards_shuffled)
+#         self.cards = []
+#         self.card_revealed = self.cards_shuffled[20]  ## 第二十一张牌是明牌
         
-    ## 叫牌机器人
-    def register(self, bots_bidding):
-        self.bots_bidding = bots_bidding
-        # [bot.register(self) for bot in self.bots_bidding]
+#     ## 叫牌机器人
+#     def register(self, bots_bidding):
+#         self.bots_bidding = bots_bidding
+#         # [bot.register(self) for bot in self.bots_bidding]
         
-    ## 各发5张牌
-    def deal_befor_bidding(self):
-        cards = self.cards_shuffled[0:20].reshape(4, 5)
-        self.cards_vec = np.array([list2vec(l) for l in cards])
+#     ## 各发5张牌
+#     def deal_befor_bidding(self):
+#         cards = self.cards_shuffled[0:20].reshape(4, 5)
+#         self.cards_vec = np.array([list2vec(l) for l in cards])
         
-    ## 叫牌
-    def bidding(self):
-        ## 0, 1, 2, 3 对应黑桃，红桃，梅花，方块，4 对应 sun
-        self.hokum = np.random.choice([0, 1, 2, 3, 4])
-        self.host = np.random.choice(4)
+#     ## 叫牌
+#     def bidding(self):
+#         ## 0, 1, 2, 3 对应黑桃，红桃，梅花，方块，4 对应 sun
+#         self.hokum = np.random.choice([0, 1, 2, 3, 4])
+#         self.host = np.random.choice(4)
 
-    ## 发剩下的牌
-    def deal_after_bidding(self):
-        host = self.host
-        cards = self.cards_shuffled[20:].reshape(4, 3)[:, 0:5]
-        cards = np.array([list2vec(l) for l in cards])
-        self.cards_vec[host] += cards[0]
-        for i in range(1, 4):
-            self.cards_vec[(host+i)%4] += cards[i]
+#     ## 发剩下的牌
+#     def deal_after_bidding(self):
+#         host = self.host
+#         cards = self.cards_shuffled[20:].reshape(4, 3)[:, 0:5]
+#         cards = np.array([list2vec(l) for l in cards])
+#         self.cards_vec[host] += cards[0]
+#         for i in range(1, 4):
+#             self.cards_vec[(host+i)%4] += cards[i]
 
-    def walkthrough(self):
-        self.deal_befor_bidding()
-        self.bidding()
-        self.deal_after_bidding()
+#     def walkthrough(self):
+#         self.deal_befor_bidding()
+#         self.bidding()
+#         self.deal_after_bidding()
 
 #%%
 ## 打牌和发牌的模型分开训练，先训练打牌的模型，再训练发牌的模型
@@ -157,7 +157,7 @@ class Game:
         self.scores.append(score)
         
         if self.verbose:
-            print(f"Round:{len(self.history)} score:{score} Scores:{np.array(self.scores).sum(axis=0)}")
+            print(f"Round:{len(self.history)} score:{score} Total Score:{np.array(self.scores).sum(axis=0)}")
         
     def get_choices(self):
         played = self.history[-1]["played"]

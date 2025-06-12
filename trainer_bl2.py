@@ -1,4 +1,4 @@
-# 修正trainer_f的错误 (误把Gs_i写成Gs[i])
+# 调整 gamma = 0.8
 
 #%%
 import os
