@@ -1,5 +1,4 @@
-## _bot_f 衍生
-## 增加 baseline
+## 使用embedding编码
 
 #%%
 import numpy as np 
