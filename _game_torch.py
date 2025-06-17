@@ -83,6 +83,7 @@ class Game:
     def __init__(self, cards_init=None, verbose=False):
         self.hokum = torch.randint(5, (1,)).item()  ## 0, 1, 2, 3 对应黑桃，红桃，梅花，方块，4 对应 sun
         self.host = torch.randint(4, (1,)).item()  ## 随机指定主叫方
+        self.revealed_owner = self.host
 
         if cards_init is None:
             cards_init = torch.randperm(32).reshape(4, 8).tolist() ## 洗牌
