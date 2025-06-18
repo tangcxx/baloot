@@ -119,10 +119,11 @@ class Bot:
         x = np.zeros((6+order, 32), dtype=np.int8)
 
         ## 明牌怎么编码？用4*32位编码1张明牌？
-        revealed_pos = (game.revealed_owner-game.host-order) % 4
         revealed = np.zeros(4, dtype=np.int8)
-        revealed[revealed_pos] = 1
-        x[0, game.card_revealed] = 1  ## 明牌
+        if np.sum(game.cards_vec, axis=0)[game.card_revealed]:  ## 明牌还没出
+            revealed_pos = (game.revealed_owner-game.host-order) % 4
+            revealed[revealed_pos] = 1
+            x[0, game.card_revealed] = 1  ## 明牌
         
         x[1, 0:32] = game.cards_vec[seats[0]]  ## 自己手牌
         x[2, 0:32] = game.cards_vec_init[seats[1]] - game.cards_vec[seats[1]] ## 下一位出过的牌
