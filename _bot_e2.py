@@ -19,37 +19,28 @@ class Model(nn.Module):
         super().__init__()
         self.emb = nn.Embedding(32, 5)
         
-        self.mlp = nn.Sequential(
-            nn.Linear(5, 32),
-            nn.ReLU(),
-            nn.Linear(32, 32)
-        )
+        self.mlp = nn.Linear(5, 40)
         
         self.lstm = nn.LSTM(5*7, 128, batch_first=True)
         
-        self.fc1 = nn.Linear(128 + 20 + 5 * 32 + nth * 5 + 16, 512)
-        self.norm1 = nn.LayerNorm(512)
+        self.fc1 = nn.Linear(128 + 20 + 5 * 40 + nth * 5 + 16, 256)
+        self.norm1 = nn.LayerNorm(256)
         self.relu1 = nn.ReLU()
         self.dropout1 = nn.Dropout(0.2)
         
-        self.fc2 = nn.Linear(512, 512)
-        self.norm2 = nn.LayerNorm(512)
+        self.fc2 = nn.Linear(256, 256)
+        self.norm2 = nn.LayerNorm(256)
         self.relu2 = nn.ReLU()
         self.dropout2 = nn.Dropout(0.2)
 
-        self.fc3 = nn.Linear(512, 512)
-        self.norm3 = nn.LayerNorm(512)
+        self.fc3 = nn.Linear(256, 256)
+        self.norm3 = nn.LayerNorm(256)
         self.relu3 = nn.ReLU()
         self.dropout3 = nn.Dropout(0.2)
 
-        self.fc4 = nn.Linear(512, 512)
-        self.norm4 = nn.LayerNorm(512)
-        self.relu4 = nn.ReLU()
-        self.dropout4 = nn.Dropout(0.2)
-
-        self.p = nn.Linear(512, 32)
+        self.p = nn.Linear(256, 32)
         
-        self.v = nn.Linear(512, 1)  # baseline value function
+        self.v = nn.Linear(256, 1)  # baseline value function
     
     # def embsum(self, cards_list):
     #     if len(cards_list) == 0:
@@ -60,11 +51,11 @@ class Model(nn.Module):
         revealed = torch.zeros((4, 5), dtype=torch.float32)
         revealed[revealed_owner] = self.emb(card_revealed)
         revealed = revealed.reshape(1, -1)  ## shape: (1, 20)
-        hands = self.mlp(self.emb(hands)).sum(dim=-2).unsqueeze(0)  ## shape: (1, 32)
-        next_1_played = self.mlp(self.emb(next_1_played)).sum(dim=-2).unsqueeze(0) ## shape: (1, 32)
-        next_2_played = self.mlp(self.emb(next_2_played)).sum(dim=-2).unsqueeze(0) ## shape: (1, 32)
-        next_3_played = self.mlp(self.emb(next_3_played)).sum(dim=-2).unsqueeze(0) ## shape: (1, 32)
-        remains = self.mlp(self.emb(remains)).sum(dim=-2).unsqueeze(0) ## shape: (1, 32)
+        hands = self.mlp(self.emb(hands)).sum(dim=-2).unsqueeze(0)  ## shape: (1, 40)
+        next_1_played = self.mlp(self.emb(next_1_played)).sum(dim=-2).unsqueeze(0) ## shape: (1, 40)
+        next_2_played = self.mlp(self.emb(next_2_played)).sum(dim=-2).unsqueeze(0) ## shape: (1, 40)
+        next_3_played = self.mlp(self.emb(next_3_played)).sum(dim=-2).unsqueeze(0) ## shape: (1, 40)
+        remains = self.mlp(self.emb(remains)).sum(dim=-2).unsqueeze(0) ## shape: (1, 40)
         played = self.emb(played).reshape(1, -1)
         
         x = torch.cat([revealed, hands, next_1_played, next_2_played, next_3_played, remains, played, outof], dim=-1)
@@ -94,11 +85,6 @@ class Model(nn.Module):
         x = self.norm3(x)
         x = self.relu3(x)
         x = self.dropout3(x)
-
-        x = self.fc4(x)
-        x = self.norm4(x)
-        x = self.relu4(x)
-        x = self.dropout4(x)
 
         return self.p(x), self.v(x)  # return both policy logits and value function
 
