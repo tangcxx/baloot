@@ -82,6 +82,7 @@ class Game:
     def __init__(self, cards=None, verbose=False):
         self.hokum = np.random.choice([0, 1, 2, 3, 4])  ## 0, 1, 2, 3 对应黑桃，红桃，梅花，方块，4 对应 sun
         self.host = np.random.choice(4)  ## 随机指定主叫方
+        self.revealed_owner = self.host
 
         if cards is None:
             cards = np.array(range(32), dtype=np.int8) ## 洗牌
