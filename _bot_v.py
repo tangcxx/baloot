@@ -32,7 +32,7 @@ class Model(nn.Module):
         self.relu3 = nn.ReLU()
         self.dropout3 = nn.Dropout(0.2)
 
-        self.v = nn.Linear(256, 1)  # baseline value function
+        self.v = nn.Linear(256, 1)
 
     def forward(self, z, x):
         lstm_out, (h_n, _) = self.lstm(z)
@@ -54,7 +54,7 @@ class Model(nn.Module):
         x = self.relu3(x)
         x = self.dropout3(x)
 
-        return self.v(x)  # return both policy logits and value function
+        return self.v(x)
 
 
 # %%

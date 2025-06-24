@@ -223,9 +223,65 @@ class Bot_Rule:
     def reset(self, game: Game):
         self.game = game
 
+    ## 出牌
+    ## 如果是本轮第一个出牌的，出最大的牌（按花色内的牌序）
+    ## 如果是后手，如果有比场上更大的牌，或己方当前更大，出最大的牌，否则出最小的牌
     def play(self, game: Game, choices):
-        # choices = game.get_choices()
-        return np.random.choice(choices)
+        if len(choices) == 1:
+            return choices[0]
+        h = game.history[-1]
+        host, played = h["host"], h["played"]
+
+        my_colors, my_ranks = [], []
+        for card in choices:
+            color = card // 8
+            index = card % 8
+            rank = ranks_hokum[index] if color == game.hokum else ranks_sun[index]
+            my_colors.append(color)
+            my_ranks.append(rank)
+
+        if len(played) == 0:
+            i = np.random.choice(np.where(np.array(my_ranks) == np.max(my_ranks))[0])
+            return choices[i]
+
+        color_round = played[0] // 8
+        color_greatest = color_round
+        index_greatest = played[0] % 8
+        rank_greatest = ranks_hokum[index_greatest] if color_greatest == game.hokum else ranks_sun[index_greatest]
+        order_greatest = 0
+
+        for order, card in enumerate(played[1:]):
+            order = order + 1
+            color = card // 8
+            index = card % 8
+            rank = ranks_hokum[index] if color == game.hokum else ranks_sun[index]
+            if color == color_greatest and rank > rank_greatest:
+                rank_greatest = rank
+                order_greatest = order
+            elif color_greatest != game.hokum and color == game.hokum:
+                color_greatest = game.hokum
+                rank_greatest = rank
+                order_greatest = order
+
+        order = len(played)
+        seat = (host + order) % 4
+        hands = game.cards_vec[order]
+        
+
+        if my_colors[0] == color_greatest:  ## 我的花色和最大花色一样
+            if np.max(my_ranks) > rank_greatest or order - order_greatest == 2:
+                return choices[np.argmax(my_ranks)]
+            else:
+                return choices[np.argmin(my_ranks)]
+        elif my_colors[0] == game.hokum:  ## 我的花色和最大花色不一样，和主花色一样
+            return choices[np.argmax(my_ranks)]
+        else:  ## 我的花色和最大花色不一样，和主花色也不一样
+            if order - order_greatest == 2:
+                i = np.random.choice(np.where(np.array(my_ranks) == np.max(my_ranks))[0])
+                return choices[i]
+            else:
+                i = np.random.choice(np.where(np.array(my_ranks) == np.min(my_ranks))[0])
+                return choices[i]
 
 # # %%
 # game = Game_Sun(verbose=True)
